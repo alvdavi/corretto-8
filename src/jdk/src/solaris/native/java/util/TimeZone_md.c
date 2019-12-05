@@ -48,7 +48,7 @@ static char *isFileIdentical(char* buf, size_t size, char *pathname);
 
 #if defined(_ALLBSD_SOURCE)
 #define dirent64 dirent
-#define readdir64_r readdir_r
+#define readdir64 readdir
 #endif
 
 #if !defined(__solaris__) || defined(__sparcv9) || defined(amd64)
@@ -119,7 +119,6 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
 {
     DIR *dirp = NULL;
     struct dirent64 *dp = NULL;
-    struct dirent64 *entry = NULL;
     char *pathname = NULL;
     char *tz = NULL;
 
@@ -145,13 +144,7 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
         return NULL;
     }
 
-    entry = (struct dirent64 *) malloc((size_t) pathconf(dir, _PC_NAME_MAX));
-    if (entry == NULL) {
-        (void) closedir(dirp);
-        return NULL;
-    }
-
-    while (readdir64_r(dirp, entry, &dp) == 0 && dp != NULL) {
+    while ((dp = readdir64(dirp)) != NULL) {
         /*
          * Skip '.' and '..' (and possibly other .* files)
          */
@@ -189,9 +182,6 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
         }
     }
 
-    if (entry != NULL) {
-        free((void *) entry);
-    }
     if (dirp != NULL) {
         (void) closedir(dirp);
     }
