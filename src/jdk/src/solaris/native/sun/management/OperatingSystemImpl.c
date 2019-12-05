@@ -75,6 +75,7 @@ static jlong page_size = 0;
 #endif /* _ALLBSD_SOURCE */
 
 #if defined(_ALLBSD_SOURCE)
+  #define dirent64 dirent
   #define readdir64 readdir
 #endif
 
@@ -419,7 +420,7 @@ Java_sun_management_OperatingSystemImpl_getOpenFileDescriptorCount
     return (100);
 #else /* solaris/linux */
     DIR *dirp;
-    struct dirent* dentp;
+    struct dirent64* dentp;
     jlong fds = 0;
 
 #if defined(_AIX)
