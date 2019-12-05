@@ -123,17 +123,6 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     char *pathname = NULL;
     char *tz = NULL;
 
-    dirp = opendir(dir);
-    if (dirp == NULL) {
-        return NULL;
-    }
-
-    entry = (struct dirent64 *) malloc((size_t) pathconf(dir, _PC_NAME_MAX));
-    if (entry == NULL) {
-        (void) closedir(dirp);
-        return NULL;
-    }
-
     if (strcmp(dir, ZONEINFO_DIR) == 0) {
         /* fast path for 1st iteration */
         for (unsigned int i = 0; i < sizeof (popularZones) / sizeof (popularZones[0]); i++) {
@@ -148,6 +137,17 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
                 return tz;
             }
         }
+    }
+
+    dirp = opendir(dir);
+    if (dirp == NULL) {
+        return NULL;
+    }
+
+    entry = (struct dirent64 *) malloc((size_t) pathconf(dir, _PC_NAME_MAX));
+    if (entry == NULL) {
+        (void) closedir(dirp);
+        return NULL;
     }
 
     while (readdir64_r(dirp, entry, &dp) == 0 && dp != NULL) {
