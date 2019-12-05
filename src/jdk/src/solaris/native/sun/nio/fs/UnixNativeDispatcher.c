@@ -56,7 +56,7 @@
 #define fstat64 fstat
 #define lstat64 lstat
 #define dirent64 dirent
-#define readdir64_r readdir_r
+#define readdir64 readdir
 #endif
 
 #include "jni.h"
@@ -673,41 +673,23 @@ Java_sun_nio_fs_UnixNativeDispatcher_closedir(JNIEnv* env, jclass this, jlong di
 
 JNIEXPORT jbyteArray JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_readdir(JNIEnv* env, jclass this, jlong value) {
-    struct dirent64* result;
-    struct {
-        struct dirent64 buf;
-        char name_extra[PATH_MAX + 1 - sizeof result->d_name];
-    } entry;
-    struct dirent64* ptr = &entry.buf;
-    int res;
     DIR* dirp = jlong_to_ptr(value);
+    struct dirent64* ptr;
 
-    /* EINTR not listed as a possible error */
-    /* TDB: reentrant version probably not required here */
-    res = readdir64_r(dirp, ptr, &result);
-
-#ifdef _AIX
-    /* On AIX, readdir_r() returns EBADF (i.e. '9') and sets 'result' to NULL for the */
-    /* directory stream end. Otherwise, 'errno' will contain the error code. */
-    if (res != 0) {
-        res = (result == NULL && res == EBADF) ? 0 : errno;
-    }
-#endif
-
-    if (res != 0) {
-        throwUnixException(env, res);
+    errno = 0;
+    ptr = readdir64(dirp);
+    if (ptr == NULL) {
+        if (errno != 0) {
+            throwUnixException(env, errno);
+        }
         return NULL;
     } else {
-        if (result == NULL) {
-            return NULL;
-        } else {
-            jsize len = strlen(ptr->d_name);
-            jbyteArray bytes = (*env)->NewByteArray(env, len);
-            if (bytes != NULL) {
-                (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)(ptr->d_name));
-            }
-            return bytes;
+        jsize len = strlen(ptr->d_name);
+        jbyteArray bytes = (*env)->NewByteArray(env, len);
+        if (bytes != NULL) {
+            (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)(ptr->d_name));
         }
+        return bytes;
     }
 }
 
